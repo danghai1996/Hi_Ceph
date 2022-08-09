@@ -39,11 +39,11 @@ Clone source code ceph-ansible từ github:
 git clone https://github.com/ceph/ceph-ansible.git
 ```
 
-Trong hướng dẫn này sử dụng bản Ceph octopus. Nên ta sẽ checkout sang nhánh `stable-5.0`
+Trong hướng dẫn này sử dụng bản Ceph Pacific. Nên ta sẽ checkout sang nhánh `stable-6.0`
 
 ```
 cd ceph-ansible/
-git checkout stable-5.0
+git checkout stable-6.0
 git pull
 ```
 
@@ -63,14 +63,16 @@ Tạo thư mục ansible:
 ```
 mkdir -p /etc/ansible
 ```
-Tạo file hosts với nội dung sau:
+Tạo file inventory với nội dung sau:
 ```
-vi /etc/ansible/hosts
+vi /root/ceph-ansible/ceph_inventory
 ```
-Nội dung file `/etc/ansible/hosts`
+Nội dung file `/root/ceph-ansible/ceph_inventory`
 ```
 [mons]
 ceph01
+ceph02
+ceph03
 
 [osds]
 ceph01
@@ -79,9 +81,12 @@ ceph03
 
 [mgrs]
 ceph01
+ceph02
+ceph03
 
-[grafana-server]
+[rgws]
 ceph01
+ceph02
 
 [monitoring]
 ceph01
@@ -97,18 +102,34 @@ cp osds.yml.sample osds.yml
 ```
 
 Cấu hình file `~/ceph-ansible/group_vars/all.yml`
-```yml
+```
 cat all.yml | egrep -v '^$|^#'
-
+```
+```yml
 ---
 dummy:
 configure_firewall: no
+ntp_service_enabled: true
 ceph_origin: repository
 ceph_repository: community
-ceph_stable_release: octopus
-monitor_interface: eth0
+ceph_stable_release: pacific
+monitor_address_block: 192.168.60.0/24
 public_network: "192.168.60.0/24"
 cluster_network: "10.10.0.0/24"
+osd_objectstore: bluestore
+crush_device_class: hdd
+radosgw_frontend_port: 80
+radosgw_interface: eth0
+ceph_conf_overrides:
+ global:
+   osd_pool_default_size: 1
+   osd_pool_default_min_size: 1
+   osd_pool_default_pg_num: 128
+mon_osd_full_ratio: .90
+mon_osd_nearfull_ratio: .70
+multi_osd_backend: no
+ceph_conf_local: true
+journal_size: 20480
 dashboard_enabled: True
 dashboard_protocol: http
 dashboard_port: 8080
@@ -119,22 +140,24 @@ grafana_admin_user: admin
 grafana_admin_password: admin
 ```
 
+
 Cấu hình file `~/ceph-ansible/group_vars/osd.yml`:
 ```yml
 cat osds.yml | egrep -v '^$|^#'
 
+---
 ---
 dummy:
 devices:
   - /dev/vdb
   - /dev/vdc
   - /dev/vdd
-osd_auto_discovery: true
+crush_device_class: "hdd"
 ```
 
-Chạy ansible: 
+Chạy ansible: (Đứng tại thư mục `~/ceph-ansible`)
 ```
-ansible-playbook site.yml
+ansible-playbook -i ceph_inventory site.yml -u root
 ```
 
 Sau khi cài đặt xong, sử dụng lệnh `ceph -s` sẽ có thông báo `mons are allowing insecure global_id reclaim`, sử dụng lệnh sau để loại bỏ check insecure:
@@ -168,3 +191,7 @@ Truy cập địa chỉ IP của node ceph mon với port đã cấu hình của
 `http://192.168.60.74:8080/` với tài khoản đã cấu hình trong file `all.yml` ở trên:
 
 ![](../images/Screenshot_2.png)
+
+
+# Tham khảo
+- https://github.com/vinhducnguyen1708/CEPH/blob/master/03-Ceph-Ansible-RGW.md
