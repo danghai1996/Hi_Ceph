@@ -1,7 +1,7 @@
-# Deploy Ceph Cluster sử dụng `cephadm` trên Ubuntu
+# Deploy Ceph Cluster Quincy sử dụng `cephadm` trên Ubuntu
 
 # IP Planing
-![](../images/Screenshot_1.png)
+
 
 # 1. Thiết lập ban đầu
 > ### Thực hiện trên tất cả các node
@@ -19,9 +19,9 @@ init 6
 ### 1.2. Cấu hình file hosts
 Thêm cấu hình file hosts `/etc/hosts` vào tất cả các node:
 ```
-192.168.60.51   cephadm01
-192.168.60.52   cephadm02
-192.168.60.53   cephadm03
+192.168.60.71   cephadm01
+192.168.60.72   cephadm02
+192.168.60.73   cephadm03
 ```
 
 ### 1.3. Cài đặt Docker
@@ -63,11 +63,11 @@ ufw disable
 `Lưu ý:` Có thể thực hiện cài đặt cephadm trên 1 node riêng biệt
 Cài đặt cephadm:
 ```
-curl --silent --remote-name --location https://github.com/ceph/ceph/raw/quincy/src/cephadm/cephadm
+curl --silent --remote-name --location https://github.com/ceph/ceph/raw/pacific/src/cephadm/cephadm
 
 chmod +x cephadm
 
-./cephadm add-repo --release quincy
+./cephadm add-repo --release pacific
 
 ./cephadm install
 ```
@@ -85,7 +85,12 @@ Kiểm tra version cephadm:
 ```
 cephadm version
 
+ceph version 16.2.10 (45fa1a083152e41a408d15505f594ec5f1b4fe17) pacific (stable)
+```
 
+Cài đặt thêm ceph-common
+```
+apt install ceph-common -y
 ```
 
 ### 2.2. Bootstrap Ceph Cluster
@@ -97,8 +102,18 @@ mkdir -p /etc/ceph
 
 Khởi tạo 1 cluster với IP của node Ceph mon. Ở đây, ta sẽ lấy node `cephadm01` để làm node Ceph mon:
 ```
-cephadm bootstrap --mon-ip 192.168.60.51  --cluster-network 10.10.0.0/24
+cephadm bootstrap \
+--mon-ip 192.168.60.71 \
+--cluster-network 10.10.0.0/24 \
+--initial-dashboard-user admin --initial-dashboard-password "Vnpt2022" \
+--dashboard-password-noupdate
 ```
+Nếu muốn cấu hình sẵn file ceph.conf thì truyền thêm option:
+```
+--config <ceph_config_file>
+```
+
+
 Trong đó:
 - `--mon-ip`: IP node ceph mon đầu tiên
 - `--cluster-network`: dải mạng dùng để replicate, recovery,... các node trong cluster.
@@ -108,7 +123,7 @@ Sau khi thực hiện lệnh này thì hệ thống sẽ thực hiện các bư�
 - Tạo SSH key và thêm vào file `/root/.ssh/authorized_keys`
 - Sinh
 
-Xem thêm các tham số khi khởi tạo tại [đây](https://docs.ceph.com/en/quincy/cephadm/install/#further-information-about-cephadm-bootstrap).
+Xem thêm các tham số khi khởi tạo tại [đây](https://docs.ceph.com/en/pacific/cephadm/install/#further-information-about-cephadm-bootstrap).
 
 ```
 Verifying podman|docker is present...
@@ -121,13 +136,12 @@ systemctl is present
 lvcreate is present
 Unit systemd-timesyncd.service is enabled and running
 Host looks OK
-Cluster fsid: 765a38d6-f6c7-11ec-8d73-e143fe0df38b
-Verifying IP 192.168.60.51 port 3300 ...
-Verifying IP 192.168.60.51 port 6789 ...
-Mon IP `192.168.60.51` is in CIDR network `192.168.60.0/24`
-Mon IP `192.168.60.51` is in CIDR network `192.168.60.0/24`
-Pulling container image quay.io/ceph/ceph:v17...
-Ceph version: ceph version 17.2.1 (ec95624474b1871a821a912b8c3af68f8f8e7aa1) quincy (stable)
+Cluster fsid: 9e58d7bc-238a-11ed-8697-47bf0a6dae70
+Verifying IP 192.168.60.71 port 3300 ...
+Verifying IP 192.168.60.71 port 6789 ...
+Mon IP `192.168.60.71` is in CIDR network `192.168.60.0/24`
+Pulling container image quay.io/ceph/ceph:v16...
+Ceph version: ceph version 16.2.10 (45fa1a083152e41a408d15505f594ec5f1b4fe17) pacific (stable)
 Extracting ceph user uid/gid from container image...
 Creating initial keys...
 Creating initial monmap...
@@ -148,6 +162,9 @@ Waiting for mgr to start...
 Waiting for mgr...
 mgr not available, waiting (1/15)...
 mgr not available, waiting (2/15)...
+mgr not available, waiting (3/15)...
+mgr not available, waiting (4/15)...
+mgr not available, waiting (5/15)...
 mgr is available
 Enabling cephadm module...
 Waiting for the mgr to restart...
@@ -157,7 +174,7 @@ Setting orchestrator backend to cephadm...
 Generating ssh key...
 Wrote public SSH key to /etc/ceph/ceph.pub
 Adding key to root@localhost authorized_keys...
-Adding host cephadm01...
+Adding host cephadm-01...
 Deploying mon service with default placement...
 Deploying mgr service with default placement...
 Deploying crash service with default placement...
@@ -174,16 +191,15 @@ Creating initial admin user...
 Fetching dashboard port number...
 Ceph Dashboard is now available at:
 
-             URL: https://cephadm01:8443/
+             URL: https://cephadm-01:8443/
             User: admin
-        Password: v76p4mzrk1
+        Password: Vnpt2022
 
 Enabling client.admin keyring and conf on hosts with "admin" label
-Saving cluster configuration to /var/lib/ceph/765a38d6-f6c7-11ec-8d73-e143fe0df38b/config directory
 Enabling autotune for osd_memory_target
 You can access the Ceph CLI as following in case of multi-cluster or non-default config:
 
-        sudo /usr/sbin/cephadm shell --fsid 765a38d6-f6c7-11ec-8d73-e143fe0df38b -c /etc/ceph/ceph.conf -k /etc/ceph/ceph.client.admin.keyring
+        sudo /usr/sbin/cephadm shell --fsid 9e58d7bc-238a-11ed-8697-47bf0a6dae70 -c /etc/ceph/ceph.conf -k /etc/ceph/ceph.client.admin.keyring
 
 Or, if you are only running a single cluster on this host:
 
@@ -195,7 +211,7 @@ Please consider enabling telemetry to help improve Ceph:
 
 For more information see:
 
-        https://docs.ceph.com/docs/master/mgr/telemetry/
+        https://docs.ceph.com/en/pacific/mgr/telemetry/
 
 Bootstrap complete.
 ```
@@ -203,67 +219,66 @@ Bootstrap complete.
 Kiểm tra phiên bản ceph:
 ```
 root@cephadm01:~# ceph -v
-ceph version 17.2.1 (ec95624474b1871a821a912b8c3af68f8f8e7aa1) quincy (stable)
+ceph version 16.2.10 (45fa1a083152e41a408d15505f594ec5f1b4fe17) pacific (stable)
 ```
 
 # 3. Thêm host vào cluster
+### 3.1. Copy key sang các node còn lại
 Tạo key ssh và copy sang các node còn lại:
 ```
 ssh-keygen
-ssh-copy-id cephadm01
-ssh-copy-id cephadm02
-ssh-copy-id cephadm03
+ssh-copy-id cephadm-01
+ssh-copy-id cephadm-02
+ssh-copy-id cephadm-03
 ```
 
 Thiết lập key ssh:
 ```
-ssh-copy-id -f -i /etc/ceph/ceph.pub root@cephadm02
-ssh-copy-id -f -i /etc/ceph/ceph.pub root@cephadm03
+ssh-copy-id -f -i /etc/ceph/ceph.pub root@cephadm-02
+ssh-copy-id -f -i /etc/ceph/ceph.pub root@cephadm-03
 ```
-
-### 3.1. Thiết lập alias cho ceph CLI
-Để có thể dùng lệnh `ceph` trên node cephadm thì ta có thể khởi tạo alias cho lệnh `cephadm shell`
-```
-alias ceph='cephadm shell -- ceph'
-echo "alias ceph='cephadm shell -- ceph'" >> ~/.bashrc
-```
-
-**Lưu ý**: Khi cần kiểm tra nhiều thông tin thì nên truy cập vào cephadm shell để thao tác cho nhanh.
 
 ### 3.2. Thêm 2 node còn lại vào cluster
 > Đứng trên node cephadm01
 
-Sử dụng cephadm shell:
-```
-cephadm shell
+Tạo file `host.yaml` với các thông tin của các host theo định dạng sau:
+```yaml
+service_type: host
+hostname: cephadm-01
+addr: 192.168.60.71
+---
+service_type: host
+hostname: cephadm-02
+addr: 192.168.60.72
+---
+service_type: host
+hostname: cephadm-03
+addr: 192.168.60.73
 ```
 
-Thêm 2 node `cephadm02` và `cephadm03` vào cluster:
+Thực hiện chạy lệnh sau để thêm và cấu hình các host đã khai báo ở trên:
 ```
-ceph orch host add cephadm02 192.168.60.52
-ceph orch host add cephadm03 192.168.60.53
+ceph orch apply -i host.yaml
 ```
 
 Kiểm tra các host đang có trong cluster:
 ```
-ceph orch host ls
-
-HOST       ADDR           LABELS  STATUS
-cephadm01  192.168.60.51  _admin
-cephadm02  192.168.60.52
-cephadm03  192.168.60.53
+root@cephadm-01:~# ceph orch host ls
+HOST        ADDR           LABELS  STATUS
+cephadm-01  192.168.60.71  _admin
+cephadm-02  192.168.60.72
+cephadm-03  192.168.60.73
 3 hosts in cluster
 ```
 
 Kiểm tra daemon trên các node:
 ```
-ceph orch ps cephadm02
-
-NAME                     HOST       PORTS        STATUS         REFRESHED  AGE  MEM USE  MEM LIM  VERSION  IMAGE ID      CONTAINER ID
-crash.cephadm02          cephadm02               running (15h)    16s ago  15h    7304k        -  17.2.1   e5af760fa1c1  f262b1ff724a
-mgr.cephadm02.bkhqol     cephadm02  *:8443,9283  running (15h)    16s ago  15h     419M        -  17.2.1   e5af760fa1c1  55c26d16ba59
-mon.cephadm02            cephadm02               running (15h)    16s ago  15h     232M    2048M  17.2.1   e5af760fa1c1  6a68fcd0ba1a
-node-exporter.cephadm02  cephadm02  *:9100       running (15h)    16s ago  15h    12.9M        -           1dbe0e931976  4c32f4301c5d
+root@cephadm-01:~# ceph orch ps cephadm-02
+NAME                      HOST        PORTS        STATUS        REFRESHED  AGE  MEM USE  MEM LIM  VERSION  IMAGE ID      CONTAINER ID
+crash.cephadm-02          cephadm-02               running (5m)     2m ago   5m    8664k        -  16.2.10  0d668911f040  fdec7c88b1af
+mgr.cephadm-02.vvrcjf     cephadm-02  *:8443,9283  running (5m)     2m ago   5m     372M        -  16.2.10  0d668911f040  38890adfd593
+mon.cephadm-02            cephadm-02               running (5m)     2m ago   5m    83.3M    2048M  16.2.10  0d668911f040  97e4ce73603d
+node-exporter.cephadm-02  cephadm-02  *:9100       running (5m)     2m ago   5m    3999k        -           1dbe0e931976  846d62b6bebc
 ```
 
 # 4. Thêm và cấu hình OSD
@@ -286,10 +301,11 @@ cephadm03  /dev/vdc  hdd   46f7f8ec-af56-462b-b  10.7G  Yes        23m ago
 - Chưa được phân vùng
 - Chưa có bất kỳ trạng thái LVM nào
 - Không được gắn (mount) vào bất kỳ đâu
-- Không chưa file system
-- Không chưa Ceph BlueStore OSD
+- Không chứa file system
+- Không chứa Ceph BlueStore OSD
 - Có kích thước >5GB
 
+## 4.1. Thêm ổ đĩa 
 Để thêm tất cả các OSD từ các deivce khả dụng. Sử dụng lệnh:
 ```
 ceph orch apply osd --all-available-devices
@@ -301,25 +317,55 @@ ceph orch daemon add osd <host>:<device-path>
 ```
 Ví dụ:
 ```
-ceph orch daemon add osd cephadm01:/dev/sdb
+ceph orch daemon add osd cephadm-01:/dev/sdb
 ```
 
 Có thể gặp tình trạng một số các osd không thể up. Khi đó, ta thực hiện restart docker container của osd đó.sau khi restart ta sẽ có trạng thái như dưới đây:
 ```
-root@cephadm01:/# ceph osd  df
-ID  CLASS  WEIGHT   REWEIGHT  SIZE    RAW USE  DATA     OMAP  META     AVAIL   %USE  VAR   PGS  STATUS
- 1    hdd  0.00980   1.00000  10 GiB   23 MiB  976 KiB   0 B   22 MiB  10 GiB  0.22  1.91    1      up
- 4    hdd  0.00980   1.00000  10 GiB   20 MiB  396 KiB   0 B   20 MiB  10 GiB  0.20  1.69    0      up
- 2    hdd  0.00980   1.00000  10 GiB  6.3 MiB  396 KiB   0 B  5.9 MiB  10 GiB  0.06  0.53    0      up
- 5    hdd  0.00980   1.00000  10 GiB  7.0 MiB  976 KiB   0 B  6.1 MiB  10 GiB  0.07  0.59    0      up
- 0    hdd  0.00980   1.00000  10 GiB  6.1 MiB  396 KiB   0 B  5.8 MiB  10 GiB  0.06  0.52    0      up
- 3    hdd  0.00980   1.00000  10 GiB  9.0 MiB  976 KiB   0 B  7.8 MiB  10 GiB  0.09  0.75    1      up
-                       TOTAL  60 GiB   71 MiB  4.0 MiB   0 B   67 MiB  60 GiB  0.12
-MIN/MAX VAR: 0.52/1.91  STDDEV: 0.07
+root@cephadm-01:~# ceph osd df
+
+ID  CLASS  WEIGHT   REWEIGHT  SIZE     RAW USE  DATA     OMAP  META     AVAIL    %USE  VAR   PGS  STATUS
+ 2    hdd  0.01949   1.00000   20 GiB  5.1 MiB  212 KiB   0 B  4.9 MiB   20 GiB  0.02  1.00    0      up
+ 5    hdd  0.01949   1.00000   20 GiB  5.1 MiB  212 KiB   0 B  4.9 MiB   20 GiB  0.02  1.00    1      up
+ 8    hdd  0.01949   1.00000   20 GiB  5.0 MiB  212 KiB   0 B  4.8 MiB   20 GiB  0.02  0.99    0      up
+ 0    hdd  0.01949   1.00000   20 GiB  5.1 MiB  212 KiB   0 B  4.9 MiB   20 GiB  0.02  1.00    0      up
+ 4    hdd  0.01949   1.00000   20 GiB  5.1 MiB  212 KiB   0 B  4.9 MiB   20 GiB  0.02  1.00    0      up
+ 7    hdd  0.01949   1.00000   20 GiB  5.1 MiB  212 KiB   0 B  4.9 MiB   20 GiB  0.02  1.00    1      up
+ 1    hdd  0.01949   1.00000   20 GiB  5.1 MiB  212 KiB   0 B  4.9 MiB   20 GiB  0.02  1.00    0      up
+ 3    hdd  0.01949   1.00000   20 GiB  5.1 MiB  212 KiB   0 B  4.9 MiB   20 GiB  0.02  1.00    1      up
+ 6    hdd  0.01949   1.00000   20 GiB  5.1 MiB  212 KiB   0 B  4.9 MiB   20 GiB  0.02  1.00    0      up
+                       TOTAL  180 GiB   46 MiB  1.9 MiB   0 B   44 MiB  180 GiB  0.02
+MIN/MAX VAR: 0.99/1.00  STDDEV: 0
+```
+
+## 4.2. Sử dụng file yaml để triển khai
+Tạo 1 file `osd.yaml`
+```yaml
+service_type: osd
+service_id: osd_using_paths
+placement:
+  hosts:
+    - cephadm-01
+    - cephadm-02
+    - cephadm-03
+spec:
+  data_devices:
+    paths:
+    - /dev/vdb
+    - /dev/vdc
+    - /dev/vdd
+  db_devices:
+    paths:
+  wal_devices:
+    paths:
+```
+Chạy lệnh:
+```
+ceph orch apply -i osd.yaml
 ```
 
 # 5. Dashboard
-Truy cập dashboard: với thông tin đăng nhập sau khi chạy lệnh bootstrap ở trên:
+Truy cập dashboard: với thông tin đăng nhập đã truyền khi chạy lệnh bootstrap. Ở đây là `Vnpt2022`
 
 ```
 Ceph Dashboard is now available at:

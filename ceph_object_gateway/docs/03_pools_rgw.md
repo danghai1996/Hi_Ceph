@@ -22,6 +22,7 @@ Pool chứa các namespace với các metadata.
     prodtx/test%25star
     testcont
     ```
+    
 - namespace: `users.uid`: pool user ID chứa bản đồ các ID của user.
 - namespace: `users.email`: chứa thông tin email của user.
 - namespace: `users.keys`: chứa access key và secret key của user
@@ -29,4 +30,4 @@ Pool chứa các namespace với các metadata.
 
 # Tham khảo
 - https://docs.ceph.com/en/latest/radosgw/layout/
-- https://access.redhat.com/documentation/en-us/red_hat_ceph_storage/3/html/object_gateway_guide_for_red_hat_enterprise_linux/rgw-configuration-reference-rgw
+- https://access.redhat.com/documentation/en-us/red_hat_ceph_storage/3/html/object_gateway_guide_for_red_hat_enterprise_linux/rgw-configuration-reference-rgw#about-pools-rgw
