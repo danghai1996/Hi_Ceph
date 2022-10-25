@@ -19,9 +19,9 @@ init 6
 ### 1.2. Cấu hình file hosts
 Thêm cấu hình file hosts `/etc/hosts` vào tất cả các node:
 ```
-192.168.60.71   cephadm01
-192.168.60.72   cephadm02
-192.168.60.73   cephadm03
+192.168.60.71   cephadm-01
+192.168.60.72   cephadm-02
+192.168.60.73   cephadm-03
 ```
 
 ### 1.3. Cài đặt Docker
@@ -112,7 +112,10 @@ Nếu muốn cấu hình sẵn file ceph.conf thì truyền thêm option:
 ```
 --config <ceph_config_file>
 ```
-
+Không triển khai các thành phần giám sát khi bootstraps cụm, ta thêm option:
+```
+--skip-monitoring-stack
+```
 
 Trong đó:
 - `--mon-ip`: IP node ceph mon đầu tiên
